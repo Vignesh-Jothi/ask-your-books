@@ -60,7 +60,7 @@ docs/            architecture, modules, data model, guardrails, eval, decisions,
   [Evaluation](docs/EVALUATION.md) · [Decisions](docs/decisions.md) ·
   [Infrastructure](docs/infrastructure.md) · [OKF](okf/README.md) ·
   [Vocabulary](docs/glossary.md) ·
-  [AI usage](AI_USAGE.md)
+  [AI usage](AI_USAGE.md) · [Contributing](CONTRIBUTING.md)
 
 ## Key design decisions (alternatives considered)
 
