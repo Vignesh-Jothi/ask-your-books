@@ -1,0 +1,28 @@
+meta {
+  name: chat - client attack blocked
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{BASE_URL}}/api/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-User-Id: U301
+}
+
+body:json {
+  {
+    "session_id": "bruno-demo-02",
+    "message": "sql: DROP TABLE vouchers"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.status: eq refused
+}
