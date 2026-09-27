@@ -44,15 +44,14 @@ Use Bruno (collection in `bruno/`) for the same calls with ready assertions.
 ## Demo
 
 <p align="center">
-  <video controls muted playsinline poster="docs/demo-poster.png" width="900">
-    <source src="docs/demo.mp4" type="video/mp4">
-    Your browser does not support embedded video — <a href="docs/demo.mp4">download the demo (51s, ~0.7 MB)</a>.
-  </video>
+  <img src="docs/demo.gif" alt="Ask Your Books demo — three questions, two users, guarded SQL shown in the observability panel" width="920">
 </p>
 
 Asks three questions as two different users (Kaveri Distributors → Acme Traders),
 watches the model pick metric tools, and shows the guarded SQL, rows, latency and
 guard decisions in the right-hand observability panel.
+
+> Animated GIF (51 s, ~1.7 MB). Full-quality version: [docs/demo.mp4](docs/demo.mp4).
 
 ## Architecture (end to end)
 
