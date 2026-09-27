@@ -1,8 +1,8 @@
 # AI Usage — how I built this project
 
 Per the assessment's rule that AI assistance be declared: this project was
-built with an AI coding agent (Claude-class model used through the `pi`
-agentic harness) working from my prompts and the submitted brief, with me
+built with an AI coding agent (`deepseek/deepseek-v4-flash-0731` through the
+`pi` agentic harness) working from my prompts and the submitted brief, with me
 reviewing and correcting every step. This file is only about **how the
 project was built** — the product's own embedded LLM is a separate feature
 documented in `docs/guardrails.md`.
@@ -29,8 +29,8 @@ documented in `docs/guardrails.md`.
   (60/60 turns, 100% consistent) against the deterministic seed.
 - The rewritten seed was byte-verified identical (table-hash diff) to prove
   refactors didn't drift the data.
-- The API/UI were smoke-tested live; the eval harness caught 7 real bugs that
-  were fixed and regression-locked.
+- The API/UI were smoke-tested live against `deepseek/deepseek-v4-flash-0731`
+  (OpenRouter);
 
 ## Disclosure notes
 

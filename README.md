@@ -22,13 +22,16 @@ read-only** answers. Built for the *Effortless AI — Assessment C* brief
 ## Quick start (5 commands)
 
 ```bash
-make setup        # python3.12 venv + deps (see scripts/setup.sh)
-make db           # build books.db (deterministic seed)
+make setup        # Python 3.10+ venv + deps + seed + smoke checks (see scripts/setup.sh)
+make db           # (re)build books.db — deterministic seed
 make app          # http://localhost:8000  → shadcn-style chat UI at /ui
 # or talk via terminal:
 make cli          # interactive chat as U301
 make eval && make test   # 60-turn eval + 37 unit tests
 ```
+
+`make setup` alone gets you to a working app in ~5 minutes (venv, pinned
+deps, deterministic DB, tests, smoke eval); nothing external is required.
 
 ```bash
 curl -sX POST localhost:8000/api/chat \
@@ -37,6 +40,63 @@ curl -sX POST localhost:8000/api/chat \
 ```
 
 Use Bruno (collection in `bruno/`) for the same calls with ready assertions.
+
+## Demo
+
+<p align="center">
+  <video controls muted playsinline poster="docs/demo-poster.png" width="900">
+    <source src="docs/demo.mp4" type="video/mp4">
+    Your browser does not support embedded video — <a href="docs/demo.mp4">download the demo (51s, ~0.7 MB)</a>.
+  </video>
+</p>
+
+Asks three questions as two different users (Kaveri Distributors → Acme Traders),
+watches the model pick metric tools, and shows the guarded SQL, rows, latency and
+guard decisions in the right-hand observability panel.
+
+## Architecture (end to end)
+
+```
+   browser (/ui, static) · curl · Bruno
+        │  POST /api/chat {message, session_id}  +  Header X-User-Id
+        ▼
+   FastAPI → chat service (agent loop, session memory, follow-ups)
+        │  system prompt (OKF entity catalog) + tool schemas + history
+        ▼
+   LLM client (mock default | openai/groq/ollama/gemini/claude/openrouter)
+        │  returns tool_calls only — numbers never come from the model
+        ▼
+   tool registry → metric handlers (hand-written SQL) + sql_query sandbox
+        │
+        ▼
+   guard layer: read-only check → SQLGuard (keywords/parse/tables/limits)
+                → sqlglot AST rewrite — every tenant table scoped to org_id
+        │
+        ▼
+   database: read-only SQLite (demo) / PostgreSQL + RLS (production)
+```
+
+- **Client** — static shadcn-style UI at `/ui` (no build step): renders
+  markdown answers + result tables, and a per-turn **action observability
+  panel** (each tool call: status, rows, latency, guarded SQL, guard decision)
+  on the right. It formats INR only — arithmetic never happens in the browser.
+- **LLM** — provider-agnostic client over the OpenAI-compatible wire format.
+  The deterministic `mock` provider is the default, so the app runs fully
+  offline with no key; a real provider is a config swap. The model only picks
+  intent + tool arguments.
+- **Tools** — curated metric tools (ageing, top debtors, group totals, party
+  balances, period comparisons, …) with canonical schemas cover the corpus;
+  a guarded `sql_query` escape hatch covers the long tail with the same
+  guardrails.
+- **Guard layer** — SQLGuard blocks write statements, forbidden keywords and
+  non-allow-listed query shapes, then sqlglot rewrites the AST so every tenant
+  table is scoped to the authenticated org (verified at runtime). Any sandbox
+  or rewrite failure is a **refusal** (`SQLGuardError`), never a crash or a
+  row leak.
+- **Database** — deterministic 18-month SQLite demo (read-only driver
+  `mode=ro` + `PRAGMA query_only=ON`); the Postgres schema in
+  `infrastructure/postgres/` mirrors it with RLS policies + observability
+  views.
 
 ## Repository map
 
@@ -86,8 +146,9 @@ docs/            architecture, modules, data model, guardrails, eval, decisions,
 
 1. The mock provider is deterministic, so “consistency” is free — with a real
    LLM, tool *choice* varies and consistency will drop; only the arithmetic
-   stays exact. The eval is designed for that swap but has not been run on one
-   here.
+   stays exact. The harness was smoke-verified live with
+   `deepseek/deepseek-v4-flash-0731` (via OpenRouter); the 20×3 eval itself
+   stayed on mock so it remains hermetic and repeatable.
 2. Questions are fixed-phrasing. The eval measures the tool/period/guard
    pipeline, not synonym robustness.
 3. Metric answers are compared as value-sorted numeric sets (order-insensitive)
@@ -103,25 +164,33 @@ docs/            architecture, modules, data model, guardrails, eval, decisions,
 
 The demo runs SQLite for zero-friction eval; the canonical schema is
 `infrastructure/postgres/001-schema-rls.sql`. At scale the design carries over
-with three changes:
+with four changes:
 
-1. **Isolation** — Postgres **row-level security** on every tenant table (policies
-   keyed on a session GUC resolved from the authenticated user), plus app-level
-   scoping as defense in depth. Read replicas get the same policies and serve
-   the agent; the primary only takes writes from the sync pipeline.
-2. **Query protection & latency** — the expensive-work defenses change shape:
-   generated SQL runs against a **read replica** through PgBouncer with a
-   short `statement_timeout` and `work_mem` cap; the agent answers from
-   **pre-aggregated summary tables** (monthly group/FY/party rollups refreshed
-   incrementally, ~20× smaller than raw lines) for every curated metric, so
-   the replica only sees index-friendly point queries. Row caps + iteration
-   caps stay app-side.
-3. **Cost & quality** — LLM cost is bounded by per-turn tool/token budgets and
-   cached period resolutions; per-org monthly token budgets + alerting on cost
-   per answered question. Answer quality is monitored by sampling real chats
-   into the same `run_eval.py` harness (labeled payloads → consistency + drift
-   scores), and guard events (`logs/`) are shipped to the observability
-   pipeline for cross-tenant-leak anomaly detection.
+1. **Isolation** — Postgres **row-level security** on every tenant table
+   (policies keyed on a session GUC resolved from the authenticated user),
+   **separate DB roles** (the app connects as a read-only role with no write
+   or DDL grants; the sync pipeline owns writes), and **views** for
+   observability/aggregation on top of the RLS wall — plus the same app-level
+   scoping as defense in depth. Read replicas carry the same policies and
+   serve the agent; the primary only takes writes from the sync pipeline.
+2. **Query protection & latency** — generated SQL runs against a **read
+   replica** through PgBouncer with a short `statement_timeout` and `work_mem`
+   cap; every curated metric answers from **pre-aggregated summary tables**
+   (monthly group/FY/party rollups refreshed incrementally, ~20× smaller than
+   raw lines), so the replica only sees index-friendly point queries. Row caps
+   + iteration caps stay app-side.
+3. **Caching (three layers)** — in-session caches (org, resolved period,
+   last metric result) already avoid redundant LLM + SQL work across
+   follow-ups; summary tables are the *data-side* cache for the hot paths;
+   for a hot Q&A tier the same response is served from a Redis TTL cache keyed
+   by (org, canonicalized question, resolved period), invalidated on data
+   epochs — cutting both LLM spend and replica load for repeated questions.
+4. **Cost & quality** — LLM cost is bounded by per-turn tool/token budgets
+   and cached period resolutions; per-org monthly token budgets + alerting on
+   cost per answered question. Answer quality is monitored by sampling real
+   chats into the same `run_eval.py` harness (labeled payloads → consistency
+   + drift scores), and guard events (`logs/`) are shipped to the
+   observability pipeline for cross-tenant-leak anomaly detection.
 
 ## Configuration
 
@@ -134,6 +203,11 @@ export LLM_PROVIDER=openai   # openai | groq | ollama | gemini | claude | openro
 export LLM_API_KEY=sk-...
 export LLM_MODEL=gpt-4o-mini # optional — provider default is used when empty
 ```
+
+This project was built and live-verified with
+**`LLM_PROVIDER=openrouter` + `LLM_MODEL=deepseek/deepseek-v4-flash-0731`**
+(the only model used during development); any other provider works unchanged —
+just supply that provider's key + model.
 
 Copy `.env.example` → `.env` for provider/keys/today/limits (everything else
 on that file is optional). Freezing `TODAY=2026-10-01` keeps ageing buckets

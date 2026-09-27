@@ -93,7 +93,8 @@ Implementations: `mock` (deterministic, offline — default), `openai_compat`
 (OpenAI / Groq / Ollama / any OpenAI-compatible endpoint). Provider, model,
 base URL, key, temperature and price-per-1k are all config. The mock exists so
 tests/eval/CI are hermetic — the real model only changes *which* tool call is
-chosen, never *how* numbers are computed.
+chosen, never *how* numbers are computed (my live development/verification
+ran on `deepseek/deepseek-v4-flash-0731` via OpenRouter).
 
 ## 7. Evaluation (run_eval.py)
 
