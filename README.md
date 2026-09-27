@@ -125,9 +125,20 @@ with three changes:
 
 ## Configuration
 
-Copy `.env.example` → `.env` for provider/keys/today/limits. Freezing
-`TODAY=2026-10-01` keeps ageing buckets and FY resolution stable across runs;
-unset it to use the real date. Postgres schema + RLS: `infrastructure/postgres/`.
+For a real LLM you only supply **provider + key** (+ optionally `LLM_MODEL`);
+base URL, default model and eval cost are auto-derived per provider
+(`src/llm/providers.py`):
+
+```bash
+export LLM_PROVIDER=openai   # openai | groq | ollama | gemini | claude | openrouter
+export LLM_API_KEY=sk-...
+export LLM_MODEL=gpt-4o-mini # optional — provider default is used when empty
+```
+
+Copy `.env.example` → `.env` for provider/keys/today/limits (everything else
+on that file is optional). Freezing `TODAY=2026-10-01` keeps ageing buckets
+and FY resolution stable across runs; unset it to use the real date.
+Postgres schema + RLS: `infrastructure/postgres/`.
 
 ## License / note
 
