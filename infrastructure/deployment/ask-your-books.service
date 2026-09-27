@@ -1,0 +1,29 @@
+# Ask Your Books — systemd unit (single-box deployment)
+#
+#   sudo cp ask-your-books.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now ask-your-books
+#
+# Environment file: /etc/ask-your-books.env (mode 600) may override:
+#   LLM_PROVIDER, LLM_API_KEY, LLM_BASE_URL, TODAY, DB_PATH
+[Unit]
+Description=Ask Your Books API + UI
+After=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/srv/ask-your-books
+EnvironmentFile=-/etc/ask-your-books.env
+ExecStart=/srv/ask-your-books/.venv/bin/uvicorn src.main:app --host 127.0.0.1 --port 8000 --workers 2
+Restart=on-failure
+RestartSec=5
+# read-only is enforced in code and via chmod (SQLite file: 0440), so a
+# compromised worker cannot modify the ledger even if a bug slips past SQLGuard.
+UMask=0022
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadOnlyDirectories=/srv/ask-your-books
+
+[Install]
+WantedBy=multi-user.target
