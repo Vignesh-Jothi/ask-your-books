@@ -19,34 +19,50 @@
         </div>
       </div>
       <label class="field-label" for="user-select">Asking as</label>
+      <!-- user/org names mirror the seeded DB (seed.py: users + organizations) -->
       <select id="user-select" class="select">
-        <option value="U301">U301 · Acme Industries (ORG3)</option>
-        <option value="U302">U302 · Admin — Acme (ORG3)</option>
-        <option value="U201">U201 · Beta Works (ORG2)</option>
+        <option value="U301" selected>Divya · Kaveri Distributors (ORG3)</option>
+        <option value="U302">Karthik · Kaveri Distributors (ORG3)</option>
+        <option value="U101">Ramesh · Acme Traders Pvt Ltd (ORG1)</option>
+        <option value="U102">Priya · Acme Traders Pvt Ltd (ORG1)</option>
+        <option value="U201">Arun · Sunrise Impex LLP (ORG2)</option>
+        <option value="U202">Meera · Sunrise Impex LLP (ORG2)</option>
       </select>
     </header>
 
-    <main class="chat-area" id="chat-area" aria-live="polite">
-      <div class="welcome-card">
-        <h1>Ask a question about your books</h1>
-        <p class="muted">Number answers come from guarded, tenant-scoped SQL. Nothing is written, nothing leaves your org. Try one:</p>
-        <div class="suggestions" role="list">
-          <button class="chip" data-q="Who owes us the most this year?">Who owes us the most this year?</button>
-          <button class="chip" data-q="How are our receivables ageing?">How are our receivables ageing?</button>
-          <button class="chip" data-q="What were our total sales this year?">What were our total sales this year?</button>
-          <button class="chip" data-q="How much did we spend last quarter compared to the same quarter last year?">Expense vs same quarter last year</button>
+    <main class="chat-column">
+      <div class="chat-area" id="chat-area" aria-live="polite">
+        <div class="welcome-card">
+          <h1>Ask a question about your books</h1>
+          <p class="muted">Number answers come from guarded, tenant-scoped SQL. Nothing is written, nothing leaves your org. Try one:</p>
+          <div class="suggestions" role="list">
+            <button class="chip" data-q="Who owes us the most this year?">Who owes us the most this year?</button>
+            <button class="chip" data-q="How are our receivables ageing?">How are our receivables ageing?</button>
+            <button class="chip" data-q="What were our total sales this year?">What were our total sales this year?</button>
+            <button class="chip" data-q="How much did we spend last quarter compared to the same quarter last year?">Expense vs same quarter last year</button>
+          </div>
         </div>
       </div>
+
+      <form id="ask-form" class="composer">
+        <textarea id="question" rows="1" placeholder="Ask about receivables, expenses, sales, ageing…" autocomplete="off"></textarea>
+        <button type="submit" class="button button-primary" id="send-button">
+          <span class="send-label">Ask</span>
+        </button>
+      </form>
+      <footer class="status-bar" id="status-bar">Ready</footer>
     </main>
 
-    <form id="ask-form" class="composer">
-      <textarea id="question" rows="1" placeholder="Ask about receivables, expenses, sales, ageing…" autocomplete="off"></textarea>
-      <button type="submit" class="button button-primary" id="send-button">
-        <span class="send-label">Ask</span>
-      </button>
-    </form>
-    <footer class="status-bar" id="status-bar">Ready</footer>
+    <aside class="obs-panel" aria-label="Action observability">
+      <div class="obs-header">
+        <span>Actions</span>
+        <span class="obs-sub">trace · tools · guard decisions</span>
+        <span class="obs-count" id="obs-count"></span>
+      </div>
+      <div class="obs-feed" id="obs-feed"></div>
+    </aside>
   </div>
+  <script src="vendor/marked.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
