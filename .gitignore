@@ -1,6 +1,8 @@
 # ---- secrets / env ----
 .env
+# ---- author-only references (never commit) ----
 A_TO_Z_GUIDE.md
+example.agent.md
 
 # ---- python ----
 .venv/
