@@ -1,0 +1,42 @@
+# ============ Ask Your Books — settings ============
+# Overridable via environment variables (see .env.example). Env wins.
+
+app:
+  name: "Ask Your Books"
+  version: "1.0.0"
+
+llm:
+  provider: mock          # openai | groq | ollama | mock
+  model: ""               # e.g. gpt-4o-mini / llama3.1:8b (empty -> provider default)
+  api_key: ""             # or set env LLM_API_KEY
+  base_url: ""            # OpenAI-compatible base URL (set for Groq/Ollama/LM Studio)
+  temperature: 0.0        # correctness over creativity
+  max_tokens: 1024
+  cost_per_1k_tokens: 0.0 # USD; set to your provider price for cost reporting
+
+db:
+  path: "books.db"        # SQLite file (read-only connection at runtime)
+
+guardrails:
+  today: "2026-10-01"     # FY/ageing reference date; also env TODAY
+  sql_timeout_seconds: 5
+  sql_row_limit: 500
+  agent_max_iterations: 6
+  tenant_tables: ["accounts", "vouchers", "voucher_lines", "bills"]
+  forbidden_keywords:
+    - ["INSERT", "UPDATE", "DELETE", "REPLACE", "TRUNCATE", "MERGE"]
+    - ["DROP", "ALTER", "CREATE", "ATTACH", "DETACH", "PRAGMA", "VACUUM"]
+    - ["EXPLAIN", "REINDEX", "ANALYZE"]
+
+logging:
+  dir: "logs"
+  tool_calls_file: "logs/tool_calls.jsonl"
+
+seed:
+  orgs: 3
+  months: 18             # Apr 2025 – Sep 2026
+  vouchers_per_org_per_month: 175   # ~3,150 vouchers / org
+  fixed_seed: 42
+
+services:
+  chat_history_size: 20

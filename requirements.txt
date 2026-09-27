@@ -1,0 +1,18 @@
+# Web API / server
+fastapi>=0.115
+uvicorn[standard]>=0.30
+
+# LLM (OpenAI-compatible: works for OpenAI, Groq, Ollama, LM Studio, ...)
+openai>=1.40
+
+# SQL parsing for the read-only + tenant guard layer
+sqlglot>=25.0
+
+# Validation (also used by FastAPI)
+pydantic>=2.7
+
+# Config
+pyyaml>=6.0
+
+# Tests
+pytest>=8.0
