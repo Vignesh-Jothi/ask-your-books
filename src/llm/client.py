@@ -33,6 +33,11 @@ def get_client():
         from src.llm.mock import MockClient
 
         return MockClient()
+    if not SETTINGS.api_key:
+        raise SystemExit(
+            f"LLM provider '{provider}' needs an API key — set LLM_API_KEY (or llm.api_key in "
+            "config/settings.yaml). Prefer LLM_PROVIDER=mock for an offline, deterministic run."
+        )
     from src.llm.openai_compat import OpenAICompatClient
 
     return OpenAICompatClient()

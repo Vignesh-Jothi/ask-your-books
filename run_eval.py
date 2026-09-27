@@ -26,19 +26,10 @@ from pathlib import Path
 from src.config.settings import SETTINGS
 from src.db.connection import connect_readonly, run_readonly
 from src.guards.tenant import scope_to_org
+from src.llm.providers import PROVIDERS
 from src.services.chat_service import chat_service
 
 ROOT = Path(__file__).resolve().parent
-
-# provider cost per 1K tokens (USD). mock = 0; tune for real keys.
-RATES_PER_1K = {
-    "mock": 0.0,
-    "openai": 0.0025,
-    "gemini": 0.00125,
-    "claude": 0.003,
-    "groq": 0.0005,
-    "ollama": 0.0,
-}
 
 
 def _scalar(rows: list[dict], compare_columns: list[str], sort: str | None) -> list[tuple]:
@@ -133,7 +124,7 @@ def main() -> int:
     corpus = corpus if isinstance(corpus, list) else corpus["questions"]
     conn = connect_readonly()
     provider = SETTINGS.provider
-    rate_per_1k = RATES_PER_1K.get(provider, 0.0)
+    rate_per_1k = PROVIDERS.get(provider, {}).get("cost_per_1k", 0.0)
     model = SETTINGS.model or provider
 
     results = []

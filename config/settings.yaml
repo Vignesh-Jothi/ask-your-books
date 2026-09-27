@@ -6,13 +6,13 @@ app:
   version: "1.0.0"
 
 llm:
-  provider: mock          # openai | groq | ollama | mock
-  model: ""               # e.g. gpt-4o-mini / llama3.1:8b (empty -> provider default)
-  api_key: ""             # or set env LLM_API_KEY
-  base_url: ""            # OpenAI-compatible base URL (set for Groq/Ollama/LM Studio)
+  provider: mock          # openai | groq | ollama | gemini | claude | openrouter | mock
+  model: ""               # optional; default per provider is auto-filled (see src/llm/providers.py)
+  api_key: ""             # or set env LLM_API_KEY (required for non-mock providers)
+  base_url: ""            # optional; auto-filled per provider when blank
   temperature: 0.0        # correctness over creativity
   max_tokens: 1024
-  cost_per_1k_tokens: 0.0 # USD; set to your provider price for cost reporting
+  cost_per_1k_tokens: "" # optional; blank = auto-filled per provider for the eval cost report
 
 db:
   path: "books.db"        # SQLite file (read-only connection at runtime)

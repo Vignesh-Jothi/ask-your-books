@@ -13,6 +13,9 @@ from pathlib import Path
 
 import yaml
 
+from src.llm.models import model_spec
+from src.llm.providers import provider_defaults
+
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_FILE = ROOT / "config" / "settings.yaml"
 
@@ -131,14 +134,29 @@ def load_settings() -> Settings:
     db_cfg = yaml_config.get("db", {})
     log_cfg = yaml_config.get("logging", {})
 
+    # the user only supplies provider + key (+ optional model); base_url,
+    # default model and cost come from the provider table when not set
+    provider = str(llm_cfg.get("provider", "mock")).lower()
+    provider_table = provider_defaults(provider)
+    model = str(llm_cfg.get("model") or provider_table.get("model", ""))
+    base_url = str(llm_cfg.get("base_url") or provider_table.get("base_url") or "")
+    cost_value = llm_cfg.get("cost_per_1k_tokens")
+    cost_per_1k = (float(cost_value) if cost_value not in (None, "")
+                   else float(provider_table.get("cost_per_1k", 0.0)))
+    # model specs cap the per-call output budget: never ask for more than the
+    # model can emit (the 1024 default stays unchanged, well under every cap)
+    spec = model_spec(provider, model) or {}
+    max_tokens = int(spec.get("max_output_tokens") or int(llm_cfg.get("max_tokens", 1024)))
+    max_tokens = min(max_tokens, int(llm_cfg.get("max_tokens", 1024)))
+
     return Settings(
-        provider=str(llm_cfg.get("provider", "mock")).lower(),
-        model=str(llm_cfg.get("model", "")),
+        provider=provider,
+        model=model,
         api_key=str(llm_cfg.get("api_key", "") or os.environ.get("OPENAI_API_KEY", "")),
-        base_url=str(llm_cfg.get("base_url", "")),
+        base_url=base_url,
         temperature=float(llm_cfg.get("temperature", 0.0)),
-        max_tokens=int(llm_cfg.get("max_tokens", 1024)),
-        cost_per_1k_tokens=float(llm_cfg.get("cost_per_1k_tokens", 0.0)),
+        max_tokens=max_tokens,
+        cost_per_1k_tokens=cost_per_1k,
         app_version=str(yaml_config.get("app", {}).get("version", "1.0.0")),
         db_path=str(db_cfg.get("path", "books.db")),
         today=str(guard_cfg.get("today", "2026-10-01")),
