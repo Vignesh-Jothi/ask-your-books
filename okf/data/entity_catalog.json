@@ -1,0 +1,85 @@
+{
+  "okf": "1.0",
+  "kind": "data.catalog",
+  "description": "Canonical data dictionary for Ask Your Books. Single source of truth for the LLM schema-context prompt and the data-model docs. SQLite dialect; see infrastructure/postgres/schema.sql for the Postgres port.",
+  "domain_rules": [
+    "Indian financial year: 1 April - 31 March. Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar.",
+    "TODAY (config/env, default 2026-10-01) is the reference for 'current' and for ageing.",
+    "Cancelled vouchers (is_cancelled=1) are excluded from every figure.",
+    "Double entry: voucher_lines of one voucher sum to 0. Debit > 0, credit < 0.",
+    "Sign convention: expenses & receivables are debit balances (positive); income & payables are credit balances (negative). Answers always show positive human-readable INR.",
+    "Amounts are stored as integer paise (amount_paise). 1 INR = 100 paise."
+  ],
+  "entities": {
+    "organizations": {
+      "label": "Organization (tenant)",
+      "pk": ["org_id"],
+      "columns": {
+        "org_id": {"type": "TEXT", "description": "Tenant id (ORG1..ORG3). Every row of every business table carries org_id; the guard injects org_id=session-org into every generated query."},
+        "name":   {"type": "TEXT", "description": "Company name"}
+      },
+      "indexes": []
+    },
+    "users": {
+      "label": "Application user",
+      "pk": ["user_id"],
+      "columns": {
+        "user_id": {"type": "TEXT", "description": "Login identity (U301..)"},
+        "org_id":  {"type": "TEXT", "description": "FK organizations. Resolved server-side from the authenticated user, never from the LLM."},
+        "name":    {"type": "TEXT"}
+      },
+      "indexes": ["org_id"]
+    },
+    "accounts": {
+      "label": "Ledger account (parties are accounts too)",
+      "pk": ["account_id", "org_id"],
+      "columns": {
+        "account_id": {"type": "TEXT", "description": "e.g. A_ORG1_0001"},
+        "org_id":     {"type": "TEXT"},
+        "name":       {"type": "TEXT", "description": "Ledger name. Party names appear here in Sundry Debtors / Sundry Creditors groups."},
+        "grp":        {"type": "TEXT", "enum": ["Sundry Debtors", "Sundry Creditors", "Bank Accounts", "Sales Accounts", "Purchase Accounts", "Direct Expenses", "Indirect Expenses", "Duties & Taxes", "Capital Accounts"], "description": "Ledger group — the main slicing dimension for expense/income/receivable/payable questions."}
+      },
+      "indexes": ["org_id", "grp", "name"]
+    },
+    "vouchers": {
+      "label": "Accounting voucher (header)",
+      "pk": ["voucher_id", "org_id"],
+      "columns": {
+        "voucher_id":  {"type": "TEXT"},
+        "org_id":      {"type": "TEXT"},
+        "vtype":       {"type": "TEXT", "enum": ["Sales", "Purchase", "Receipt", "Payment", "Journal", "Credit Note", "Debit Note"]},
+        "vdate":       {"type": "TEXT", "format": "YYYY-MM-DD", "description": "Transaction date; the period filter for all revenue/expense questions."},
+        "number":      {"type": "TEXT", "description": "Human voucher number"},
+        "is_cancelled":{"type": "INTEGER", "values": [0, 1], "description": "1 = cancelled; exclude from every figure"}
+      },
+      "indexes": ["org_id", "vtype", "vdate"]
+    },
+    "voucher_lines": {
+      "label": "Voucher line (double entry)",
+      "pk": [],
+      "columns": {
+        "voucher_id":  {"type": "TEXT", "description": "FK vouchers (carries org via voucher)"},
+        "account_id":  {"type": "TEXT", "description": "FK accounts (carries org)"},
+        "amount_paise":{"type": "INTEGER", "description": "Debit positive, credit negative. Lines of one voucher sum to 0."}
+      },
+      "note": "No org_id column: always join through vouchers/accounts. The tenant guard therefore rewrites voucher_lines as a join against tenant-scoped vouchers+accounts.",
+      "indexes": ["voucher_id", "account_id"]
+    },
+    "bills": {
+      "label": "Bill-wise outstanding for parties",
+      "pk": ["bill_id", "org_id"],
+      "columns": {
+        "bill_id":          {"type": "TEXT"},
+        "org_id":           {"type": "TEXT"},
+        "party_account_id": {"type": "TEXT", "description": "FK accounts, grp in Sundry Debtors/Creditors"},
+        "voucher_id":       {"type": "TEXT"},
+        "bill_date":        {"type": "TEXT", "format": "YYYY-MM-DD"},
+        "due_date":         {"type": "TEXT", "format": "YYYY-MM-DD", "description": "Ageing anchor: buckets vs TODAY"},
+        "amount_paise":     {"type": "INTEGER", "description": "Positive = receivable, negative = payable"},
+        "outstanding_paise":{"type": "INTEGER", "description": "Current outstanding in the same sign as amount_paise"}
+      },
+      "indexes": ["org_id", "party_account_id", "due_date"]
+    }
+  },
+  "ageing_buckets": ["not_due", "0-30", "31-60", "61-90", "90+"]
+}
