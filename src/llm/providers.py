@@ -22,3 +22,24 @@ PROVIDERS = {
 def provider_defaults(provider: str) -> dict:
     """Defaults for a provider name ({} for unknown — the user must then supply model/base_url)."""
     return dict(PROVIDERS.get(provider, {}))
+
+
+def known_providers() -> str:
+    """Comma-joined provider names for error messages."""
+    return ", ".join(sorted(PROVIDERS))
+
+
+def ensure_resolvable(provider: str, base_url: str, model: str) -> None:
+    """Fail loudly on a provider we cannot talk to: unknown name with no
+    explicit base_url would silently point at OpenAI's endpoint. Treating a
+    typo like 'openroute' (missing 'r') as an error beats a confusing 401."""
+    if provider != "mock" and not base_url:
+        raise ValueError(
+            f"Unknown LLM provider '{provider}'. Known providers: {known_providers()}. "
+            "For a custom provider, set LLM_BASE_URL (and LLM_MODEL) explicitly."
+        )
+    if model and provider != "mock" and provider not in PROVIDERS:
+        raise ValueError(
+            f"Unknown LLM provider '{provider}' (model '{model}' would go nowhere). "
+            f"Known providers: {known_providers()}."
+        )

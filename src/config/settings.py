@@ -14,10 +14,30 @@ from pathlib import Path
 import yaml
 
 from src.llm.models import model_spec
-from src.llm.providers import provider_defaults
+from src.llm.providers import ensure_resolvable, provider_defaults
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_FILE = ROOT / "config" / "settings.yaml"
+
+
+def _load_dotenv(path: Path = ROOT / ".env") -> None:
+    """Merge KEY=VALUE lines from .env into os.environ, never overriding
+    variables that are already set. Ignores blanks/comment lines and strips
+    optional quotes and an optional 'export ' prefix."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        key, _, value = stripped.partition("=")
+        key = key.strip().removeprefix("export ").strip()
+        value = value.strip().strip('"\'')
+        if key:
+            os.environ.setdefault(key, value)
+
+
+_load_dotenv()
 
 
 def _as_type(value: str, hint: type):
@@ -135,11 +155,14 @@ def load_settings() -> Settings:
     log_cfg = yaml_config.get("logging", {})
 
     # the user only supplies provider + key (+ optional model); base_url,
-    # default model and cost come from the provider table when not set
+    # default model and cost come from the provider table when not set;
+    # an unknown provider without explicit base_url is a config error, not a
+    # silent fallback to OpenAI's endpoint
     provider = str(llm_cfg.get("provider", "mock")).lower()
     provider_table = provider_defaults(provider)
     model = str(llm_cfg.get("model") or provider_table.get("model", ""))
     base_url = str(llm_cfg.get("base_url") or provider_table.get("base_url") or "")
+    ensure_resolvable(provider=provider, base_url=base_url, model=model)
     cost_value = llm_cfg.get("cost_per_1k_tokens")
     cost_per_1k = (float(cost_value) if cost_value not in (None, "")
                    else float(provider_table.get("cost_per_1k", 0.0)))
