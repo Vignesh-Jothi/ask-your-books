@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "okf:schema:chat.request.json",
+  "title": "Chat request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["message", "session_id"],
+  "properties": {
+    "message":             { "type": "string", "minLength": 1, "maxLength": 2000, "description": "User question. Free-form natural language." },
+    "session_id":          { "type": "string", "minLength": 1, "maxLength": 64, "description": "Opaque session id for follow-up context." },
+    "reply_to":            { "type": "string", "description": "Optional: clarification option id the user clicked." }
+  }
+}

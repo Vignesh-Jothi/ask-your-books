@@ -1,0 +1,28 @@
+meta {
+  name: chat - top debtors
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{BASE_URL}}/api/chat
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-User-Id: U301
+}
+
+body:json {
+  {
+    "session_id": "bruno-demo-01",
+    "message": "Who owes us the most this year?"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.status: in [answered, clarifying, refused]
+}

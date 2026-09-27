@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: infrastructure/docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_PROVIDER=mock          # swap to openai/groq/ollama for the real LLM
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_BASE_URL=${LLM_BASE_URL:-}
+      - TODAY=${TODAY:-2026-10-01}  # freeze demo date so ageing buckets are stable
+    volumes:
+      - app_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  app_data:

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "okf:schema:tool.call.json",
+  "title": "Tool call log entry",
+  "description": "One line in logs/tool_calls.jsonl. Written for every tool execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ts", "trace_id", "org_id", "user_id", "session_id", "tool", "status"],
+  "properties": {
+    "ts":         { "type": "string", "format": "date-time" },
+    "trace_id":   { "type": "string" },
+    "org_id":     { "type": "string" },
+    "user_id":    { "type": "string" },
+    "session_id": { "type": "string" },
+    "tool":       { "type": "string" },
+    "arguments":  { "type": "object" },
+    "generated_sql": { "type": ["string", "null"] },
+    "row_count":  { "type": "integer" },
+    "status":     { "enum": ["ok", "error", "refused"] },
+    "error":      { "type": ["string", "null"] },
+    "latency_ms": { "type": "number" },
+    "tokens":     { "type": "integer" }
+  }
+}

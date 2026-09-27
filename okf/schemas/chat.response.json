@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "okf:schema:chat.response.json",
+  "title": "Chat response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_id", "role", "status"],
+  "properties": {
+    "session_id":  { "type": "string" },
+    "role":        { "const": "assistant" },
+    "status":      { "enum": ["answered", "clarifying", "refused", "error"] },
+    "text":        { "type": "string", "description": "Human-readable answer (INR-formatted numbers)." },
+    "assumption":  { "type": "string", "nullable": true, "description": "Period / sign assumption the answer used (shown under the answer)." },
+    "period":      { "type": ["string", "null"], "description": "Resolved date range, e.g. 'FY 2024-25 (2024-04-01..2025-03-31)'." },
+    "clarify":     { "type": "array", "items": { "type": "string" }, "description": "2-3 concrete options when status=clarifying." },
+    "refusal":     { "type": ["string", "null"], "description": "Why we refused, when status=refused." },
+    "rows":        { "type": "array", "description": "Table rows for the frontend (numbers in paise)." },
+    "trace": {
+      "type": "array",
+      "description": "Tool call trace for 'show your work'.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tool", "status"],
+        "properties": {
+          "tool":     { "type": "string" },
+          "args":     { "type": "object" },
+          "sql":      { "type": "string", "description": "The exact SQL that ran (guarded)." },
+          "rows":     { "type": "integer" },
+          "status":   { "enum": ["ok", "error"] },
+          "error":    { "type": "string" },
+          "latency_ms": { "type": "number" },
+          "tokens":   { "type": "integer" }
+        }
+      }
+    }
+  }
+}
