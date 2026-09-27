@@ -19,7 +19,7 @@ documented in `docs/guardrails.md`.
 | **6. Services & API** | Built chat orchestration (tool loop, session memory, follow-ups), logging/metrics/billing services, and the FastAPI routes + CLI. | Reviewed the flow end to end; fixed agent-loop and period-label bugs the eval later caught. |
 | **7. Tests & eval** | Wrote the unit tests and the 20-question × 3-run eval harness with independent reference SQL. | Authored the questions and expected outcomes; used every failure the harness found to harden the code. |
 | **8. Frontend, Bruno, infra** | Produced the shadcn-style static UI, the Bruno collection, and the Docker/Postgres-RLS/systemd/nginx files. | Expanded scope only where the brief demanded it; kept the demo runnable with zero external services. |
-| **9. Docs** | Structured and drafted the docs (architecture, modules, data model, guardrails, eval, decisions, infrastructure, glossary) and the README checklists. | Corrected overclaims, added the honest failure analysis, and kept the author-only `A_TO_Z_GUIDE.md` out of git. |
+| **9. Docs** | Structured and drafted the docs (architecture, modules, data model, guardrails, eval, decisions, infrastructure, glossary) and the README checklists. | Corrected overclaims, added the honest failure analysis. |
 
 ## How I verified AI output
 

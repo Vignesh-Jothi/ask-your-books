@@ -1,9 +1,8 @@
-# agent.md — Ask Your Books
+# AGENTS.md — Ask Your Books
 
 > Single source of truth for AI-agent instructions in this repo. Read this
 > file before every session; it only carries the rules that must never be
-> violated. `example.agent.md` next to this file is a formatting reference
-> from another project — ignore its content.
+> violated.
 
 ---
 
@@ -61,7 +60,9 @@ question-answering agent.
 
 3. **Use the venv.** Always `./.venv/bin/python` / `./.venv/bin/pytest` —
    never the system Python. `make test` runs the suite, `make eval` runs the
-   60-turn harness, `make db` regenerates `books.db` (gitignored).
+   60-turn harness; `make db` regenerates `books.db` (gitignored) — but **do
+   not re-seed or alter the working DB without explicit user approval** (see
+   the Process rules).
 4. **Prove it, don't assume.** Every change lands with evidence: green
    `make test`, and — for anything touching data/guards/tools — a green
    `make eval` (must stay 100% / 100%). After a `seed.py` change, re-seed and
@@ -111,9 +112,6 @@ question-answering agent.
   **Vortex** only: `finish-feature`, `finish-hotfix`, `merge-to-devops`,
   `create-release` / `complete-release`. Branch creation goes through Vortex
   (`feature/<name>`, `hotfix/<name>`, `devops/<name>`).
-- If a Vortex call fails or returns an ambiguous/`unknown` status, **report
-  the observed state as-is and stop** — do not infer success, do not propose a
-  manual merge workaround. The user decides.
 - **Never push a merge, rebase, conflict-resolution, `reset --hard` or
   force-push to `develop`/`main`** without the user's explicit go-ahead for
   that specific action.
@@ -121,12 +119,12 @@ question-answering agent.
   the head locally, push the head), never into a shared branch.
 
 ### Process
-- **Never commit automatically.** Stage with `git add` and wait for the user's
-  explicit instruction to commit. Conventional Commits
-  (`type(scope): summary`, see `CONTRIBUTING.md`); one logical change per
-  commit.
+- **Gate commits and DB-level actions on approval.** Never commit, and never
+  run database-level actions — re-seeding, `make db`, migrations, or any
+  DROP/ALTER on the working `books.db` — until the user explicitly approves.
+  Stage with `git add` and wait for the instruction to commit. Conventional
+  Commits (`type(scope): summary`, see `CONTRIBUTING.md`); one logical change
+  per commit.
 - **A bug fix includes its regression test** — the test that fails on the old
   code and passes on the new one, in the same change.
 - **Stay in scope.** Implement only what was asked; no sideways refactors.
-- `docs/A_TO_Z_GUIDE.md` and `example.agent.md` are **author-only references —
-  never commit them** (both are gitignored).
