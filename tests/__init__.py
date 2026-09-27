@@ -1,0 +1,1 @@
+"""Unit tests — no LLM, no network. Run: pytest -q"""
