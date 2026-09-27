@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "okf:schema:metric.result.json",
+  "title": "Metric tool result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["metric", "org_id", "period", "rows"],
+  "properties": {
+    "metric":  { "type": "string" },
+    "org_id":  { "type": "string" },
+    "period":  { "type": ["string", "null"], "description": "Resolved [start,end] date range, e.g. '2026-07-01..2026-09-30'." },
+    "rows":    { "type": "array", "items": { "type": "object" }, "description": "Numeric cells are integer paise." },
+    "total_paise": { "type": ["integer", "null"] }
+  }
+}
